@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-handsfree
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-handsfree
+  template:
+    metadata:
+      labels:
+        app: infinimesh-handsfree
+    spec:
+      containers:
+        - name: handsfree
+          image: ghcr.io/infinimesh/core/handsfree:latest
+          imagePullPolicy: Always
+          env:
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: SIGNING_KEY
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-handsfree
+spec:
+  selector:
+    app: infinimesh-handsfree
+  ports:
+    - port: 8000
+      targetPort: 8000

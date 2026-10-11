@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-mqtt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-mqtt
+  template:
+    metadata:
+      labels:
+        app: infinimesh-mqtt
+    spec:
+      containers:
+        - name: mqtt-bridge
+          image: ghcr.io/infinimesh/core/mqtt-bridge:latest
+          imagePullPolicy: Always
+          env:
+            - name: RABBITMQ_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: RABBITMQ_CONN
+            - name: DEVICES_HOST
+              value: infinimesh-repo:8000
+            - name: SHADOW_HOST
+              value: infinimesh-shadow:8000
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: SIGNING_KEY
+          ports:
+            - containerPort: 1883
+            - containerPort: 8883
+            - containerPort: 2112
+          volumeMounts:
+            - name: cert
+              mountPath: /cert
+              readOnly: true
+      volumes:
+        - name: cert
+          secret:
+            secretName: infinimesh-mqtt-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-mqtt
+spec:
+  type: LoadBalancer
+  selector:
+    app: infinimesh-mqtt
+  ports:
+    - name: mqtt
+      port: 1883
+      targetPort: 1883
+    - name: tls
+      port: 8883
+      targetPort: 8883

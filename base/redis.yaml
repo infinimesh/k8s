@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: infinimesh-redis
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-redis
+  template:
+    metadata:
+      labels:
+        app: infinimesh-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:latest
+          imagePullPolicy: Always
+          args: ["redis-server", "--appendonly", "yes"]
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: infinimesh-redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-redis
+spec:
+  selector:
+    app: infinimesh-redis
+  ports:
+    - port: 6379
+      targetPort: 6379

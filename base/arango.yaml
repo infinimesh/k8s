@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: infinimesh-arango
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-arango
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-arango
+  template:
+    metadata:
+      labels:
+        app: infinimesh-arango
+    spec:
+      containers:
+        - name: arango
+          image: arangodb/arangodb:latest
+          imagePullPolicy: Always
+          env:
+            - name: ARANGO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: ARANGO_ROOT_PASSWORD
+          ports:
+            - containerPort: 8529
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/arangodb3
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: infinimesh-arango
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-arango
+spec:
+  selector:
+    app: infinimesh-arango
+  ports:
+    - port: 8529
+      targetPort: 8529

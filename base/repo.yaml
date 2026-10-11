@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-repo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-repo
+  template:
+    metadata:
+      labels:
+        app: infinimesh-repo
+    spec:
+      containers:
+        - name: repo
+          image: ghcr.io/infinimesh/core/repo:latest
+          imagePullPolicy: Always
+          env:
+            - name: DB_HOST
+              value: infinimesh-arango:8529
+            - name: DB_CRED
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: DB_CRED
+            - name: SHADOW_HOST
+              value: infinimesh-shadow:8000
+            - name: HANDSFREE_HOST
+              value: infinimesh-handsfree:8000
+            - name: REGISTRY_HOST
+              value: infinimesh-repo:8000
+            - name: NAMESPACES_HOST
+              value: infinimesh-repo:8000
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: SIGNING_KEY
+            - name: INF_DEFAULT_ROOT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: INF_DEFAULT_ROOT_PASS
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-repo
+spec:
+  selector:
+    app: infinimesh-repo
+  ports:
+    - port: 8000
+      targetPort: 8000

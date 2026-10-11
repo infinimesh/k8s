@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-console
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-console
+  template:
+    metadata:
+      labels:
+        app: infinimesh-console
+    spec:
+      containers:
+        - name: console
+          image: ghcr.io/infinimesh/core/console:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-console
+spec:
+  selector:
+    app: infinimesh-console
+  ports:
+    - port: 80
+      targetPort: 80
