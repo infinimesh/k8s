@@ -1,36 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: infinimesh-web
+  name: infinimesh-gateway
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: infinimesh-web
+      app: infinimesh-gateway
   template:
     metadata:
       labels:
-        app: infinimesh-web
+        app: infinimesh-gateway
     spec:
       containers:
-        - name: web
-          image: ghcr.io/infinimesh/core/web:latest
+        - name: gateway
+          image: ghcr.io/infinimesh/core/gateway:latest
           imagePullPolicy: Always
           env:
             - name: APISERVER_HOST
-              value: infinimesh-repo:8000
-            - name: HANDSFREE
-              value: infinimesh-handsfree:8000
+              value: infinimesh-api:8000
+            - name: PAIRING
+              value: infinimesh-pairing:8000
           ports:
             - containerPort: 8000
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: infinimesh-web
+  name: infinimesh-gateway
 spec:
   selector:
-    app: infinimesh-web
+    app: infinimesh-gateway
   ports:
     - port: 8000
       targetPort: 8000

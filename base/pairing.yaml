@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: infinimesh-handsfree
+  name: infinimesh-pairing
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: infinimesh-handsfree
+      app: infinimesh-pairing
   template:
     metadata:
       labels:
-        app: infinimesh-handsfree
+        app: infinimesh-pairing
     spec:
       containers:
-        - name: handsfree
-          image: ghcr.io/infinimesh/core/handsfree:latest
+        - name: pairing
+          image: ghcr.io/infinimesh/core/pairing:latest
           imagePullPolicy: Always
           env:
             - name: SIGNING_KEY
@@ -28,10 +28,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: infinimesh-handsfree
+  name: infinimesh-pairing
 spec:
   selector:
-    app: infinimesh-handsfree
+    app: infinimesh-pairing
   ports:
     - port: 8000
       targetPort: 8000

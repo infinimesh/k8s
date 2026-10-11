@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: infinimesh-repo
+  name: infinimesh-api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: infinimesh-repo
+      app: infinimesh-api
   template:
     metadata:
       labels:
-        app: infinimesh-repo
+        app: infinimesh-api
     spec:
       containers:
-        - name: repo
-          image: ghcr.io/infinimesh/core/repo:latest
+        - name: api
+          image: ghcr.io/infinimesh/core/api:latest
           imagePullPolicy: Always
           env:
             - name: DB_HOST
@@ -26,12 +26,12 @@ spec:
                   key: DB_CRED
             - name: SHADOW_HOST
               value: infinimesh-shadow:8000
-            - name: HANDSFREE_HOST
-              value: infinimesh-handsfree:8000
+            - name: PAIRING_HOST
+              value: infinimesh-pairing:8000
             - name: REGISTRY_HOST
-              value: infinimesh-repo:8000
+              value: infinimesh-api:8000
             - name: NAMESPACES_HOST
-              value: infinimesh-repo:8000
+              value: infinimesh-api:8000
             - name: SIGNING_KEY
               valueFrom:
                 secretKeyRef:
@@ -48,10 +48,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: infinimesh-repo
+  name: infinimesh-api
 spec:
   selector:
-    app: infinimesh-repo
+    app: infinimesh-api
   ports:
     - port: 8000
       targetPort: 8000

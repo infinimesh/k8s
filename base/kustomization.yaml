@@ -7,9 +7,9 @@ resources:
   - arango.yaml
   - rabbitmq.yaml
   - redis.yaml
-  - repo.yaml
+  - api.yaml
   - shadow.yaml
   - mqtt.yaml
-  - web.yaml
+  - gateway.yaml
   - console.yaml
-  - handsfree.yaml
+  - pairing.yaml
