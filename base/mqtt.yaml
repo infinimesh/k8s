@@ -23,7 +23,7 @@ spec:
                   name: infinimesh-auth
                   key: RABBITMQ_CONN
             - name: DEVICES_HOST
-              value: infinimesh-repo:8000
+              value: infinimesh-api:8000
             - name: SHADOW_HOST
               value: infinimesh-shadow:8000
             - name: SIGNING_KEY

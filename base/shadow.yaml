@@ -25,7 +25,7 @@ spec:
             - name: REDIS_HOST
               value: infinimesh-redis:6379
             - name: DEVICES_HOST
-              value: infinimesh-repo:8000
+              value: infinimesh-api:8000
             - name: SIGNING_KEY
               valueFrom:
                 secretKeyRef:

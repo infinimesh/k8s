@@ -1,6 +1,6 @@
 # Infinimesh on Kubernetes
 
-The cluster install of [core](https://github.com/infinimesh/core). Same processes as Docker Compose: ArangoDB, RabbitMQ, Redis, `repo`, `shadow`, `mqtt-bridge`, `web`, `console`, and `handsfree`.
+The cluster install of [core](https://github.com/infinimesh/core). Same processes as Docker Compose: ArangoDB, RabbitMQ, Redis, `api`, `shadow`, `mqtt-bridge`, `gateway`, `console`, and `pairing`.
 
 Images are `ghcr.io/infinimesh/core/<service>:latest`. A core release tag also pushes that tag. `imagePullPolicy: Always` is set so a rollout takes the new image.
 
@@ -16,9 +16,9 @@ kubectl -n infinimesh create secret tls infinimesh-mqtt-tls --cert=hack/server.c
 
 | Service | Port |
 |---|---|
-| `infinimesh-web` | 8000 |
+| `infinimesh-gateway` | 8000 |
 | `infinimesh-console` | 80 |
-| `infinimesh-repo` | 8000 |
+| `infinimesh-api` | 8000 |
 | `infinimesh-mqtt` | 1883, 8883 |
 
 A default StorageClass is required. ArangoDB, RabbitMQ, and Redis each request a 10Gi volume.
