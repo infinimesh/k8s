@@ -8,7 +8,11 @@ Images are `ghcr.io/infinimesh/core/<service>:latest`. A core release tag also p
 kubectl apply -k base
 ```
 
-The auth secret uses the Compose defaults (`openSesame`, `infinimesh`, `seeeecreet`). Change `base/secret.yaml` before you expose the cluster. The MQTT bridge loads `base/certs`, the same sample certificate as `core` `hack/server.crt`. Replace that secret for a real deployment.
+The auth secret uses the Compose defaults (`openSesame`, `infinimesh`, `seeeecreet`). Change `base/secret.yaml` before you expose the cluster. Create the MQTT TLS secret before the bridge can start. The sample pair in core is `hack/server.crt` and `hack/server.key`:
+
+```bash
+kubectl -n infinimesh create secret tls infinimesh-mqtt-tls --cert=hack/server.crt --key=hack/server.key
+```
 
 | Service | Port |
 |---|---|
