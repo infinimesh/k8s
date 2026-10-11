@@ -1,19 +1,24 @@
 # Infinimesh on Kubernetes
 
-Install recipes for a cluster running the [platform operator](https://github.com/infinimesh/platform-operator).
+The cluster install of [core](https://github.com/infinimesh/core). Same processes as Docker Compose: ArangoDB, RabbitMQ, Redis, `repo`, `shadow`, `mqtt-bridge`, `web`, `console`, and `handsfree`.
 
-- `microk8s/` — local microk8s via Multipass, then a Platform
-- `minikube/` — local minikube, then a Platform
-- `hetzner/` — Platform and Kafka manifests for a hosted cluster
-- `production/` — production Kafka, Postgres, and a microk8s bootstrap script
-
-Apply the operator first:
+Images are `ghcr.io/infinimesh/core/<service>:latest`. A core release tag also pushes that tag. `imagePullPolicy: Always` is set so a rollout takes the new image.
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/infinimesh/platform-operator/main/manifests/crd.yaml
-kubectl apply -f https://raw.githubusercontent.com/infinimesh/platform-operator/main/manifests/operator.yaml
+kubectl apply -k base
 ```
 
-The Docker Compose stack for the current platform is in [core](https://github.com/infinimesh/core).
+The auth secret uses the Compose defaults (`openSesame`, `infinimesh`, `seeeecreet`). Change `base/secret.yaml` before you expose the cluster. The MQTT bridge loads `base/certs`, the same sample certificate as `core` `hack/server.crt`. Replace that secret for a real deployment.
+
+| Service | Port |
+|---|---|
+| `infinimesh-web` | 8000 |
+| `infinimesh-console` | 80 |
+| `infinimesh-repo` | 8000 |
+| `infinimesh-mqtt` | 1883, 8883 |
+
+A default StorageClass is required. ArangoDB, RabbitMQ, and Redis each request a 10Gi volume.
+
+The [platform operator](https://github.com/infinimesh/platform-operator) reconciles a Platform into this same stack. It does not install Kafka or Dgraph.
 
 Apache-2.0.

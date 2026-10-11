@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-shadow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-shadow
+  template:
+    metadata:
+      labels:
+        app: infinimesh-shadow
+    spec:
+      containers:
+        - name: shadow
+          image: ghcr.io/infinimesh/core/shadow:latest
+          imagePullPolicy: Always
+          env:
+            - name: RABBITMQ_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: RABBITMQ_CONN
+            - name: REDIS_HOST
+              value: infinimesh-redis:6379
+            - name: DEVICES_HOST
+              value: infinimesh-repo:8000
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: SIGNING_KEY
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-shadow
+spec:
+  selector:
+    app: infinimesh-shadow
+  ports:
+    - port: 8000
+      targetPort: 8000
