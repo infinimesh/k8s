@@ -1,0 +1,16 @@
+{{- if .Values.metrics.serviceMonitor }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: infinimesh
+  namespace: {{ .Values.namespace.name }}
+spec:
+  selector:
+    matchLabels:
+      infinimesh.io/metrics: "true"
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.namespace.name }}
+  endpoints:
+    - port: metrics
+{{- end }}

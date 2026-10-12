@@ -1,0 +1,50 @@
+namespace:
+  create: true
+  name: infinimesh
+
+image:
+  registry: ghcr.io/infinimesh/core
+  tag: v3.3.0
+
+replicas:
+  api: 2
+  shadow: 2
+  mqtt-bridge: 2
+  gateway: 1
+  console: 1
+  pairing: 1
+
+# Compose defaults, same as base/secret.yaml.
+auth:
+  arangoRootPassword: openSesame
+  dbCred: "root:openSesame"
+  rabbitmqUser: infinimesh
+  rabbitmqPass: infinimesh
+  signingKey: seeeecreet
+  rootPass: infinimesh
+
+external:
+  arangodb: false
+  rabbitmq: false
+  redis: false
+  # host:port. Used only when the matching flag above is true.
+  # rabbitmq is the host in amqp://user:pass@host/.
+  hosts:
+    arangodb: ""
+    rabbitmq: ""
+    redis: ""
+
+metrics:
+  serviceMonitor: false
+
+arangodb:
+  image: arangodb/arangodb:latest
+  storage: 10Gi
+
+rabbitmq:
+  image: rabbitmq:3.9-management
+  storage: 10Gi
+
+redis:
+  image: redis:latest
+  storage: 10Gi

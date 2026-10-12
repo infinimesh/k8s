@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-shadow
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: {{ .Values.replicas.shadow }}
+  selector:
+    matchLabels:
+      app: infinimesh-shadow
+  template:
+    metadata:
+      labels:
+        app: infinimesh-shadow
+    spec:
+      containers:
+        - name: shadow
+          image: {{ include "infinimesh.coreImage" (dict "registry" .Values.image.registry "service" "shadow" "tag" .Values.image.tag) }}
+          imagePullPolicy: {{ include "infinimesh.pullPolicy" (dict "tag" .Values.image.tag) }}
+          env:
+            - name: RABBITMQ_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: RABBITMQ_CONN
+            - name: REDIS_HOST
+              value: {{ include "infinimesh.redisHost" . | quote }}
+            - name: DEVICES_HOST
+              value: infinimesh-api:8000
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: SIGNING_KEY
+          ports:
+            - containerPort: 8000
+            - name: metrics
+              containerPort: 2112
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-shadow
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: infinimesh-shadow
+    infinimesh.io/metrics: "true"
+spec:
+  selector:
+    app: infinimesh-shadow
+  ports:
+    - port: 8000
+      targetPort: 8000
+    - name: metrics
+      port: 2112
+      targetPort: metrics

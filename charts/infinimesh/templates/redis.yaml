@@ -1,0 +1,60 @@
+{{- if not .Values.external.redis }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: infinimesh-redis
+  namespace: {{ .Values.namespace.name }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.redis.storage }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-redis
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-redis
+  template:
+    metadata:
+      labels:
+        app: infinimesh-redis
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image }}
+          imagePullPolicy: Always
+          args: ["redis-server", "--appendonly", "yes"]
+          ports:
+            - containerPort: 6379
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: infinimesh-redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-redis
+  namespace: {{ .Values.namespace.name }}
+spec:
+  selector:
+    app: infinimesh-redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+{{- end }}

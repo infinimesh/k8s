@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-mqtt
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: {{ index .Values.replicas "mqtt-bridge" }}
+  selector:
+    matchLabels:
+      app: infinimesh-mqtt
+  template:
+    metadata:
+      labels:
+        app: infinimesh-mqtt
+    spec:
+      containers:
+        - name: mqtt-bridge
+          image: {{ include "infinimesh.coreImage" (dict "registry" .Values.image.registry "service" "mqtt-bridge" "tag" .Values.image.tag) }}
+          imagePullPolicy: {{ include "infinimesh.pullPolicy" (dict "tag" .Values.image.tag) }}
+          env:
+            - name: RABBITMQ_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: RABBITMQ_CONN
+            - name: DEVICES_HOST
+              value: infinimesh-api:8000
+            - name: SHADOW_HOST
+              value: infinimesh-shadow:8000
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: SIGNING_KEY
+          ports:
+            - containerPort: 1883
+            - containerPort: 8883
+            - name: metrics
+              containerPort: 2112
+          livenessProbe:
+            tcpSocket:
+              port: 1883
+          readinessProbe:
+            tcpSocket:
+              port: 1883
+          volumeMounts:
+            - name: cert
+              mountPath: /cert
+              readOnly: true
+      volumes:
+        - name: cert
+          secret:
+            secretName: infinimesh-mqtt-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-mqtt
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: infinimesh-mqtt
+    infinimesh.io/metrics: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    app: infinimesh-mqtt
+  ports:
+    - name: mqtt
+      port: 1883
+      targetPort: 1883
+    - name: tls
+      port: 8883
+      targetPort: 8883
+    - name: metrics
+      port: 2112
+      targetPort: metrics

@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-api
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: {{ .Values.replicas.api }}
+  selector:
+    matchLabels:
+      app: infinimesh-api
+  template:
+    metadata:
+      labels:
+        app: infinimesh-api
+    spec:
+      containers:
+        - name: api
+          image: {{ include "infinimesh.coreImage" (dict "registry" .Values.image.registry "service" "api" "tag" .Values.image.tag) }}
+          imagePullPolicy: {{ include "infinimesh.pullPolicy" (dict "tag" .Values.image.tag) }}
+          env:
+            - name: DB_HOST
+              value: {{ include "infinimesh.dbHost" . | quote }}
+            - name: DB_CRED
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: DB_CRED
+            - name: SHADOW_HOST
+              value: infinimesh-shadow:8000
+            - name: PAIRING_HOST
+              value: infinimesh-pairing:8000
+            - name: REGISTRY_HOST
+              value: infinimesh-api:8000
+            - name: NAMESPACES_HOST
+              value: infinimesh-api:8000
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: SIGNING_KEY
+            - name: INF_DEFAULT_ROOT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: INF_DEFAULT_ROOT_PASS
+          ports:
+            - containerPort: 8000
+            - name: metrics
+              containerPort: 2112
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-api
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: infinimesh-api
+    infinimesh.io/metrics: "true"
+spec:
+  selector:
+    app: infinimesh-api
+  ports:
+    - port: 8000
+      targetPort: 8000
+    - name: metrics
+      port: 2112
+      targetPort: metrics
