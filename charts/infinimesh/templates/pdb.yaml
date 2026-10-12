@@ -1,0 +1,21 @@
+{{- $root := . }}
+{{- $items := list
+  (dict "name" "infinimesh-api" "replicas" .Values.replicas.api)
+  (dict "name" "infinimesh-shadow" "replicas" .Values.replicas.shadow)
+  (dict "name" "infinimesh-mqtt" "replicas" (index .Values.replicas "mqtt-bridge"))
+}}
+{{- range $items }}
+{{- if gt (int .replicas) 1 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .name }}
+  namespace: {{ $root.Values.namespace.name }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: {{ .name }}
+{{- end }}
+{{- end }}

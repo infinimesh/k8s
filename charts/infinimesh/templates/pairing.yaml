@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-pairing
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: {{ .Values.replicas.pairing }}
+  selector:
+    matchLabels:
+      app: infinimesh-pairing
+  template:
+    metadata:
+      labels:
+        app: infinimesh-pairing
+    spec:
+      containers:
+        - name: pairing
+          image: {{ include "infinimesh.coreImage" (dict "registry" .Values.image.registry "service" "pairing" "tag" .Values.image.tag) }}
+          imagePullPolicy: {{ include "infinimesh.pullPolicy" (dict "tag" .Values.image.tag) }}
+          env:
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: SIGNING_KEY
+          ports:
+            - containerPort: 8000
+            - name: metrics
+              containerPort: 2112
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-pairing
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: infinimesh-pairing
+    infinimesh.io/metrics: "true"
+spec:
+  selector:
+    app: infinimesh-pairing
+  ports:
+    - port: 8000
+      targetPort: 8000
+    - name: metrics
+      port: 2112
+      targetPort: metrics

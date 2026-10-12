@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-console
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: {{ .Values.replicas.console }}
+  selector:
+    matchLabels:
+      app: infinimesh-console
+  template:
+    metadata:
+      labels:
+        app: infinimesh-console
+    spec:
+      containers:
+        - name: console
+          image: {{ include "infinimesh.coreImage" (dict "registry" .Values.image.registry "service" "console" "tag" .Values.image.tag) }}
+          imagePullPolicy: {{ include "infinimesh.pullPolicy" (dict "tag" .Values.image.tag) }}
+          ports:
+            - containerPort: 80
+            - name: metrics
+              containerPort: 2112
+          livenessProbe:
+            tcpSocket:
+              port: 80
+          readinessProbe:
+            tcpSocket:
+              port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-console
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: infinimesh-console
+    infinimesh.io/metrics: "true"
+spec:
+  selector:
+    app: infinimesh-console
+  ports:
+    - port: 80
+      targetPort: 80
+    - name: metrics
+      port: 2112
+      targetPort: metrics

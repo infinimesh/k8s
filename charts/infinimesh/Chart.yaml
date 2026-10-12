@@ -1,0 +1,6 @@
+apiVersion: v2
+name: infinimesh
+description: Infinimesh core on Kubernetes
+type: application
+version: 0.1.0
+appVersion: "v3.3.0"
