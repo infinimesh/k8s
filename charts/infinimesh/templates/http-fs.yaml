@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-http-fs
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: {{ .Values.replicas.httpFs }}
+  selector:
+    matchLabels:
+      app: infinimesh-http-fs
+  template:
+    metadata:
+      labels:
+        app: infinimesh-http-fs
+    spec:
+      containers:
+        - name: http-fs
+          image: {{ include "infinimesh.coreImage" (dict "registry" .Values.image.registry "service" "http-fs" "tag" .Values.image.tag) }}
+          imagePullPolicy: {{ include "infinimesh.pullPolicy" (dict "tag" .Values.image.tag) }}
+          env:
+            - name: DB_HOST
+              value: {{ include "infinimesh.dbHost" . | quote }}
+            - name: DB_CRED
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: DB_CRED
+            - name: INF_DEFAULT_ROOT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: INF_DEFAULT_ROOT_PASS
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: SIGNING_KEY
+            - name: HTTP_FS_ROOT
+              value: /static
+            - name: HTTP_FS_MAX_BYTES
+              value: {{ .Values.httpFs.maxBytes | quote }}
+            - name: HTTP_FS_TYPES
+              value: {{ .Values.httpFs.types | quote }}
+            {{- if .Values.httpFs.s3.bucket }}
+            - name: HTTP_FS_S3_ENDPOINT
+              value: {{ .Values.httpFs.s3.endpoint | quote }}
+            - name: HTTP_FS_S3_BUCKET
+              value: {{ .Values.httpFs.s3.bucket | quote }}
+            - name: HTTP_FS_S3_REGION
+              value: {{ .Values.httpFs.s3.region | quote }}
+            - name: HTTP_FS_S3_ACCESS_KEY
+              value: {{ .Values.httpFs.s3.accessKey | quote }}
+            - name: HTTP_FS_S3_SECRET_KEY
+              value: {{ .Values.httpFs.s3.secretKey | quote }}
+            - name: HTTP_FS_S3_PATH_STYLE
+              value: {{ .Values.httpFs.s3.pathStyle | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8000
+            - name: metrics
+              containerPort: 2112
+          {{- if not .Values.httpFs.s3.bucket }}
+          volumeMounts:
+            - name: data
+              mountPath: /static
+          {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+          readinessProbe:
+            tcpSocket:
+              port: http
+      {{- if not .Values.httpFs.s3.bucket }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: infinimesh-http-fs
+      {{- end }}
+---
+{{- if not .Values.httpFs.s3.bucket }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: infinimesh-http-fs
+  namespace: {{ .Values.namespace.name }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.httpFs.storage }}
+---
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-http-fs
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: infinimesh-http-fs
+    infinimesh.io/metrics: "true"
+spec:
+  selector:
+    app: infinimesh-http-fs
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+    - name: metrics
+      port: 2112
+      targetPort: metrics
