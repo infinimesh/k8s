@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-coap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-coap
+  template:
+    metadata:
+      labels:
+        app: infinimesh-coap
+    spec:
+      containers:
+        - name: coap-gateway
+          image: ghcr.io/infinimesh/core/coap-gateway:latest
+          imagePullPolicy: Always
+          env:
+            - name: COAP_ADDR
+              value: ":5683"
+            - name: RABBITMQ_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: RABBITMQ_CONN
+          ports:
+            - name: coap
+              containerPort: 5683
+              protocol: UDP
+            - containerPort: 2112
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-coap
+spec:
+  type: ClusterIP
+  selector:
+    app: infinimesh-coap
+  ports:
+    - name: coap
+      port: 5683
+      protocol: UDP
+      targetPort: 5683
+    - port: 2112
+      targetPort: 2112

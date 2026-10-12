@@ -13,3 +13,5 @@ resources:
   - gateway.yaml
   - console.yaml
   - pairing.yaml
+  - rules.yaml
+  - coap.yaml

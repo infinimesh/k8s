@@ -32,17 +32,23 @@ spec:
                 secretKeyRef:
                   name: infinimesh-auth
                   key: SIGNING_KEY
+            {{- if .Values.mqtt.plaintext }}
+            - name: MQTT_PLAINTEXT
+              value: "1"
+            {{- end }}
           ports:
+            {{- if .Values.mqtt.plaintext }}
             - containerPort: 1883
+            {{- end }}
             - containerPort: 8883
             - name: metrics
               containerPort: 2112
           livenessProbe:
             tcpSocket:
-              port: 1883
+              port: {{ if .Values.mqtt.plaintext }}1883{{ else }}8883{{ end }}
           readinessProbe:
             tcpSocket:
-              port: 1883
+              port: {{ if .Values.mqtt.plaintext }}1883{{ else }}8883{{ end }}
           volumeMounts:
             - name: cert
               mountPath: /cert
@@ -65,9 +71,11 @@ spec:
   selector:
     app: infinimesh-mqtt
   ports:
+    {{- if .Values.mqtt.plaintext }}
     - name: mqtt
       port: 1883
       targetPort: 1883
+    {{- end }}
     - name: tls
       port: 8883
       targetPort: 8883

@@ -1,6 +1,6 @@
 # Infinimesh on Kubernetes
 
-The cluster install of [core](https://github.com/infinimesh/core). Same processes as Docker Compose: ArangoDB, RabbitMQ, Redis, `api`, `shadow`, `mqtt-bridge`, `gateway`, `console`, and `pairing`.
+The cluster install of [core](https://github.com/infinimesh/core). Same processes as Docker Compose: ArangoDB, RabbitMQ, Redis, `api`, `shadow`, `mqtt-bridge`, `gateway`, `console`, `pairing`, `rules`, and `coap-gateway`.
 
 ## Kustomize
 
@@ -14,7 +14,7 @@ The auth secret uses the Compose defaults (`openSesame`, `infinimesh`, `seeeecre
 
 ## Helm
 
-`charts/infinimesh` installs the same Services into the `infinimesh` namespace (`namespace.create`, `namespace.name`). Core images are `ghcr.io/infinimesh/core/<service>:v3.3.0` (`image.tag`). `imagePullPolicy` is `IfNotPresent`, or `Always` when the tag is `latest`. `api`, `shadow`, and `mqtt-bridge` default to 2 replicas and have a PodDisruptionBudget (`minAvailable: 1`) when that replica count is greater than 1. `gateway`, `console`, and `pairing` default to 1 replica.
+`charts/infinimesh` installs the same Services into the `infinimesh` namespace (`namespace.create`, `namespace.name`). Core images are `ghcr.io/infinimesh/core/<service>:v3.3.0` (`image.tag`). `imagePullPolicy` is `IfNotPresent`, or `Always` when the tag is `latest`. `api`, `shadow`, and `mqtt-bridge` default to 2 replicas and have a PodDisruptionBudget (`minAvailable: 1`) when that replica count is greater than 1. `gateway`, `console`, `pairing`, and `rules` default to 1 replica. CoAP is off unless `coap.enabled` is true. Its Service is ClusterIP on UDP 5683. MQTT publishes 8883. Set `mqtt.plaintext` to also publish 1883.
 
 ArangoDB (`arangodb/arangodb:latest`), RabbitMQ (`rabbitmq:3.9-management`), and Redis (`redis:latest`) run in-cluster, each with a 10Gi volume. Set `external.arangodb`, `external.rabbitmq`, or `external.redis` to skip that workload. Service env then uses `external.hosts.arangodb` (`DB_HOST`, `host:port`), `external.hosts.redis` (`REDIS_HOST`, `host:port`), or `external.hosts.rabbitmq` (`host:port` in `RABBITMQ_CONN`).
 
@@ -39,7 +39,9 @@ kubectl -n infinimesh create secret tls infinimesh-mqtt-tls --cert=hack/server.c
 | `infinimesh-gateway` | 8000 |
 | `infinimesh-console` | 80 |
 | `infinimesh-api` | 8000 |
-| `infinimesh-mqtt` | 1883, 8883 |
+| `infinimesh-mqtt` | 8883 |
+| `infinimesh-rules` | 2112 |
+| `infinimesh-coap` | 5683/udp when `coap.enabled` |
 
 A default StorageClass is required for in-cluster ArangoDB, RabbitMQ, and Redis volumes.
 
