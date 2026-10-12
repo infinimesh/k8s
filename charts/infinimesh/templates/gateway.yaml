@@ -22,6 +22,10 @@ spec:
               value: infinimesh-api:8000
             - name: PAIRING
               value: infinimesh-pairing:8000
+            {{- if .Values.httpFs.publicURL }}
+            - name: HTTP_FS
+              value: {{ .Values.httpFs.publicURL | quote }}
+            {{- end }}
           ports:
             - containerPort: 8000
             - name: metrics

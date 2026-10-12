@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: infinimesh-http-fs
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-http-fs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-http-fs
+  template:
+    metadata:
+      labels:
+        app: infinimesh-http-fs
+    spec:
+      containers:
+        - name: http-fs
+          image: ghcr.io/infinimesh/core/http-fs:latest
+          imagePullPolicy: Always
+          env:
+            - name: DB_HOST
+              value: infinimesh-arango:8529
+            - name: DB_CRED
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: DB_CRED
+            - name: INF_DEFAULT_ROOT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: INF_DEFAULT_ROOT_PASS
+            - name: SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: SIGNING_KEY
+            - name: HTTP_FS_ROOT
+              value: /static
+          ports:
+            - name: http
+              containerPort: 8000
+            - name: metrics
+              containerPort: 2112
+          volumeMounts:
+            - name: data
+              mountPath: /static
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: infinimesh-http-fs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-http-fs
+spec:
+  selector:
+    app: infinimesh-http-fs
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+    - name: metrics
+      port: 2112
+      targetPort: metrics
