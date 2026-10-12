@@ -1,0 +1,62 @@
+{{- if .Values.coap.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-coap
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-coap
+  template:
+    metadata:
+      labels:
+        app: infinimesh-coap
+    spec:
+      containers:
+        - name: coap-gateway
+          image: {{ include "infinimesh.coreImage" (dict "registry" .Values.image.registry "service" "coap-gateway" "tag" .Values.image.tag) }}
+          imagePullPolicy: {{ include "infinimesh.pullPolicy" (dict "tag" .Values.image.tag) }}
+          env:
+            - name: COAP_ADDR
+              value: ":5683"
+            - name: RABBITMQ_CONN
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: RABBITMQ_CONN
+          ports:
+            - name: coap
+              containerPort: 5683
+              protocol: UDP
+            - name: metrics
+              containerPort: 2112
+          livenessProbe:
+            tcpSocket:
+              port: metrics
+          readinessProbe:
+            tcpSocket:
+              port: metrics
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-coap
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: infinimesh-coap
+    infinimesh.io/metrics: "true"
+spec:
+  type: ClusterIP
+  selector:
+    app: infinimesh-coap
+  ports:
+    - name: coap
+      port: 5683
+      targetPort: coap
+      protocol: UDP
+    - name: metrics
+      port: 2112
+      targetPort: metrics
+{{- end }}

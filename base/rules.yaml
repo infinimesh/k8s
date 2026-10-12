@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-rules
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-rules
+  template:
+    metadata:
+      labels:
+        app: infinimesh-rules
+    spec:
+      containers:
+        - name: rules
+          image: ghcr.io/infinimesh/core/rules:latest
+          imagePullPolicy: Always
+          env:
+            - name: DB_HOST
+              value: infinimesh-arango:8529
+            - name: DB_CRED
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: DB_CRED
+            - name: REDIS_HOST
+              value: infinimesh-redis:6379
+            - name: SHADOW_HOST
+              value: infinimesh-shadow:8000
+            - name: INF_DEFAULT_ROOT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: INF_DEFAULT_ROOT_PASS
+          ports:
+            - containerPort: 2112
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-rules
+spec:
+  selector:
+    app: infinimesh-rules
+  ports:
+    - port: 2112
+      targetPort: 2112

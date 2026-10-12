@@ -13,6 +13,13 @@ replicas:
   gateway: 1
   console: 1
   pairing: 1
+  rules: 1
+
+mqtt:
+  plaintext: false
+
+coap:
+  enabled: false
 
 # Compose defaults, same as base/secret.yaml.
 auth:

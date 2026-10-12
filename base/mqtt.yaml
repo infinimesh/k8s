@@ -32,7 +32,6 @@ spec:
                   name: infinimesh-auth
                   key: SIGNING_KEY
           ports:
-            - containerPort: 1883
             - containerPort: 8883
             - containerPort: 2112
           volumeMounts:
@@ -53,9 +52,6 @@ spec:
   selector:
     app: infinimesh-mqtt
   ports:
-    - name: mqtt
-      port: 1883
-      targetPort: 1883
     - name: tls
       port: 8883
       targetPort: 8883

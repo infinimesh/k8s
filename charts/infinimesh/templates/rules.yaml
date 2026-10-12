@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-rules
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: {{ .Values.replicas.rules }}
+  selector:
+    matchLabels:
+      app: infinimesh-rules
+  template:
+    metadata:
+      labels:
+        app: infinimesh-rules
+    spec:
+      containers:
+        - name: rules
+          image: {{ include "infinimesh.coreImage" (dict "registry" .Values.image.registry "service" "rules" "tag" .Values.image.tag) }}
+          imagePullPolicy: {{ include "infinimesh.pullPolicy" (dict "tag" .Values.image.tag) }}
+          env:
+            - name: DB_HOST
+              value: {{ include "infinimesh.dbHost" . | quote }}
+            - name: DB_CRED
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: DB_CRED
+            - name: REDIS_HOST
+              value: {{ include "infinimesh.redisHost" . | quote }}
+            - name: SHADOW_HOST
+              value: infinimesh-shadow:8000
+            - name: INF_DEFAULT_ROOT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: infinimesh-auth
+                  key: INF_DEFAULT_ROOT_PASS
+          ports:
+            - name: metrics
+              containerPort: 2112
+          livenessProbe:
+            tcpSocket:
+              port: metrics
+          readinessProbe:
+            tcpSocket:
+              port: metrics
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infinimesh-rules
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: infinimesh-rules
+    infinimesh.io/metrics: "true"
+spec:
+  selector:
+    app: infinimesh-rules
+  ports:
+    - name: metrics
+      port: 2112
+      targetPort: metrics
