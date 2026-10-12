@@ -24,6 +24,8 @@ spec:
                 secretKeyRef:
                   name: infinimesh-auth
                   key: DB_CRED
+            - name: REDIS_HOST
+              value: infinimesh-redis:6379
             - name: SHADOW_HOST
               value: infinimesh-shadow:8000
             - name: PAIRING_HOST
