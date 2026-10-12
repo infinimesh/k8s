@@ -22,6 +22,8 @@ spec:
                 secretKeyRef:
                   name: infinimesh-auth
                   key: SIGNING_KEY
+            - name: REDIS_HOST
+              value: infinimesh-redis:6379
           ports:
             - containerPort: 8000
 ---
