@@ -1,0 +1,16 @@
+name: Chart CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint charts/infinimesh
+      - run: helm template infinimesh charts/infinimesh > /dev/null
+      - run: helm template infinimesh charts/infinimesh --set coap.enabled=true --set mqtt.plaintext=true > /dev/null
