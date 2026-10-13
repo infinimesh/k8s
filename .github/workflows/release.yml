@@ -1,0 +1,102 @@
+name: Release chart
+
+# core's release orchestrator sends core-release {version, prerelease}.
+# Final: PR setting image.tag, appVersion and the chart version, auto-merge, tag,
+#        push oci://ghcr.io/infinimesh/charts/infinimesh, GitHub release (latest).
+# rc:    package main with the rc versions (nothing committed), push, GitHub pre-release.
+on:
+  repository_dispatch:
+    types: [core-release]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      V: ${{ github.event.client_payload.version }}
+      PRE: ${{ github.event.client_payload.prerelease }}
+      HAS_APP: ${{ secrets.RELEASE_APP_ID != '' && secrets.RELEASE_APP_PRIVATE_KEY != '' }}
+    steps:
+      - name: Check inputs
+        id: ok
+        run: |
+          if [ "$HAS_APP" != "true" ]; then
+            echo "::warning::RELEASE_APP_ID / RELEASE_APP_PRIVATE_KEY are not set, skipping. See infinimesh/core RELEASING.md."
+            echo "run=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          printf '%s\n' "$V" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$' || { echo "::error::bad version $V"; exit 1; }
+          echo "run=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/create-github-app-token@v2
+        if: steps.ok.outputs.run == 'true'
+        id: app
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: infinimesh
+          repositories: k8s
+      - uses: actions/checkout@v4
+        if: steps.ok.outputs.run == 'true'
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ steps.app.outputs.token }}
+      - uses: azure/setup-helm@v4
+        if: steps.ok.outputs.run == 'true'
+      - name: Set versions
+        if: steps.ok.outputs.run == 'true'
+        run: |
+          C=charts/infinimesh
+          sed -i -E "s/^  tag: v[^ ]+/  tag: $V/" $C/values.yaml
+          sed -i -E "s/^appVersion: .*/appVersion: \"$V\"/; s/^version: .*/version: ${V#v}/" $C/Chart.yaml
+          sed -i -E "s#core/<service>:v[0-9][^\`]*#core/<service>:$V#" README.md
+          helm lint $C
+      - name: Bump PR (final only)
+        if: steps.ok.outputs.run == 'true' && env.PRE != 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          if git diff --quiet; then echo "already at $V"; exit 0; fi
+          b="release/core-$V"
+          git config user.name "infinimesh-release[bot]"
+          git config user.email "infinimesh-release[bot]@users.noreply.github.com"
+          git switch -c "$b"
+          git commit -am "Chart for core $V"
+          git push -f origin "$b"
+          gh pr create --base main --head "$b" --title "Chart for core $V" --body "Release $V in lockstep with core." || true
+          gh pr merge "$b" --squash --auto --delete-branch
+          for _ in $(seq 1 80); do
+            s=$(gh pr view "$b" --json state -q .state)
+            [ "$s" = MERGED ] && break
+            [ "$s" = CLOSED ] && { echo "::error::bump PR closed"; exit 1; }
+            sleep 30
+          done
+          [ "$s" = MERGED ] || { echo "::error::bump PR not merged after 40 minutes"; exit 1; }
+          git switch main && git pull -q origin main
+      - name: Package and push
+        if: steps.ok.outputs.run == 'true'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+          helm package charts/infinimesh --version "${V#v}" --app-version "$V" -d dist
+          helm push "dist/infinimesh-${V#v}.tgz" oci://ghcr.io/infinimesh/charts
+      - name: Tag and GitHub release
+        if: steps.ok.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          if ! git ls-remote --exit-code --tags origin "refs/tags/$V" >/dev/null; then
+            git tag "$V" HEAD && git push origin "$V"
+          fi
+          gh release view "$V" >/dev/null 2>&1 && exit 0
+          flags="--latest"
+          [ "$PRE" = "true" ] && flags="--prerelease --latest=false"
+          # shellcheck disable=SC2086
+          gh release create "$V" "dist/infinimesh-${V#v}.tgz" $flags --title "$V" \
+            --notes "Helm chart ${V#v} for core $V: \`helm install infinimesh oci://ghcr.io/infinimesh/charts/infinimesh --version ${V#v}\`"
