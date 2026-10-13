@@ -2,5 +2,5 @@ apiVersion: v2
 name: infinimesh
 description: Infinimesh core on Kubernetes
 type: application
-version: 3.4.0-rc.10
-appVersion: "v3.4.0-rc.10"
+version: 3.4.0
+appVersion: "v3.4.0"
