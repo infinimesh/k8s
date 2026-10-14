@@ -4,7 +4,7 @@ namespace:
 
 image:
   registry: ghcr.io/infinimesh/core
-  tag: v3.4.0
+  tag: v3.4.1
 
 replicas:
   api: 2
