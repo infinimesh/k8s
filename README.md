@@ -26,6 +26,8 @@ Chart auth defaults match Compose and `base/secret.yaml`: database password `ope
 
 Readiness and liveness are TCP probes on the service port. Every core container has a `metrics` port on 2112. Set `metrics.serviceMonitor` to create a ServiceMonitor that scrapes port 2112.
 
+`addons.otaHawkbit.enabled` is false. Set it, `addons.otaHawkbit.image.tag`, `addons.otaHawkbit.hawkbitURL`, and one of `otaNamespace` or `otaNamespaces`. The Deployment reads `OTA_ADDON_TOKEN`, `HAWKBIT_USER`, and `HAWKBIT_PASSWORD` from `addons.otaHawkbit.existingSecret`. The chart does not create that secret. `apiURL` defaults to `http://infinimesh-api:8000`, so `allowInsecure` defaults to true. The addon README is [ota-hawkbit](https://github.com/infinimesh/addons/blob/main/ota-hawkbit/README.md).
+
 ## MQTT TLS
 
 Create the MQTT TLS secret before the bridge can start. The chart does not create it. The sample pair in core is `hack/server.crt` and `hack/server.key`:

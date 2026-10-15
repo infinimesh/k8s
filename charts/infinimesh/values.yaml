@@ -69,3 +69,19 @@ rabbitmq:
 redis:
   image: redis:latest
   storage: 10Gi
+
+addons:
+  otaHawkbit:
+    enabled: false
+    image:
+      repository: ghcr.io/infinimesh/ota-hawkbit
+      tag: ""
+    apiURL: http://infinimesh-api:8000
+    allowInsecure: true
+    hawkbitURL: ""
+    otaNamespace: ""
+    otaNamespaces: ""
+    groupTags: ""
+    pollSecs: ""
+    stateFile: /tmp/ota-state.json
+    existingSecret: ""

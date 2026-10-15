@@ -1,0 +1,70 @@
+{{- if .Values.addons.otaHawkbit.enabled }}
+{{- $one := .Values.addons.otaHawkbit.otaNamespace }}
+{{- $many := .Values.addons.otaHawkbit.otaNamespaces }}
+{{- if and $one $many }}
+{{- fail "set addons.otaHawkbit.otaNamespace or addons.otaHawkbit.otaNamespaces" }}
+{{- end }}
+{{- if and (not $one) (not $many) }}
+{{- fail "set addons.otaHawkbit.otaNamespace or addons.otaHawkbit.otaNamespaces" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infinimesh-ota-hawkbit
+  namespace: {{ .Values.namespace.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infinimesh-ota-hawkbit
+  template:
+    metadata:
+      labels:
+        app: infinimesh-ota-hawkbit
+    spec:
+      containers:
+        - name: ota-hawkbit
+          image: {{ printf "%s:%s" (required "addons.otaHawkbit.image.repository is required" .Values.addons.otaHawkbit.image.repository) (required "addons.otaHawkbit.image.tag is required" .Values.addons.otaHawkbit.image.tag) }}
+          imagePullPolicy: {{ include "infinimesh.pullPolicy" (dict "tag" .Values.addons.otaHawkbit.image.tag) }}
+          env:
+            - name: OTA_ADDON_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "addons.otaHawkbit.existingSecret is required" .Values.addons.otaHawkbit.existingSecret }}
+                  key: OTA_ADDON_TOKEN
+            - name: HAWKBIT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.addons.otaHawkbit.existingSecret }}
+                  key: HAWKBIT_USER
+            - name: HAWKBIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.addons.otaHawkbit.existingSecret }}
+                  key: HAWKBIT_PASSWORD
+            - name: API_URL
+              value: {{ .Values.addons.otaHawkbit.apiURL | quote }}
+            - name: HAWKBIT_URL
+              value: {{ required "addons.otaHawkbit.hawkbitURL is required" .Values.addons.otaHawkbit.hawkbitURL | quote }}
+            - name: OTA_STATE_FILE
+              value: {{ .Values.addons.otaHawkbit.stateFile | quote }}
+            {{- if .Values.addons.otaHawkbit.allowInsecure }}
+            - name: OTA_ALLOW_INSECURE
+              value: "1"
+            {{- end }}
+            {{- if $one }}
+            - name: OTA_NAMESPACE
+              value: {{ $one | quote }}
+            {{- else }}
+            - name: OTA_NAMESPACES
+              value: {{ $many | quote }}
+            {{- end }}
+            {{- if .Values.addons.otaHawkbit.groupTags }}
+            - name: OTA_GROUP_TAGS
+              value: {{ .Values.addons.otaHawkbit.groupTags | quote }}
+            {{- end }}
+            {{- if ne (toString .Values.addons.otaHawkbit.pollSecs) "" }}
+            - name: OTA_POLL_SECS
+              value: {{ .Values.addons.otaHawkbit.pollSecs | quote }}
+            {{- end }}
+{{- end }}

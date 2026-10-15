@@ -14,3 +14,4 @@ jobs:
       - run: helm lint charts/infinimesh
       - run: helm template infinimesh charts/infinimesh > /dev/null
       - run: helm template infinimesh charts/infinimesh --set coap.enabled=true --set mqtt.plaintext=true > /dev/null
+      - run: python3 charts/infinimesh/ota_hawkbit_test.py
